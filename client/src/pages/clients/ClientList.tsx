@@ -7,11 +7,13 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  Stack,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DataTable from '../../components/common/DataTable';
 import FormDialog from '../../components/common/FormDialog';
 import ClientForm from './ClientForm';
+import ImportExportButtons from '../../components/common/ImportExportButtons';
 import clientService, { Client } from '../../services/api/clientService';
 
 const ClientList: React.FC = () => {
@@ -109,6 +111,50 @@ const ClientList: React.FC = () => {
     }
   };
 
+  const handleImportClients = async (importedData: any[]) => {
+    setLoading(true);
+    try {
+      // Process each imported client
+      const results = await Promise.all(
+        importedData.map(async (client) => {
+          // Check if client with same name already exists
+          const existingClients = await clientService.getAll();
+          const existingClient = existingClients.find(
+            (c) => c.Name.toLowerCase() === client.Name.toLowerCase()
+          );
+
+          if (existingClient) {
+            // Update existing client
+            return await clientService.update(existingClient.ClientID, client);
+          } else {
+            // Create new client
+            return await clientService.create(client);
+          }
+        })
+      );
+
+      setSnackbar({
+        open: true,
+        message: `Successfully imported ${results.length} clients`,
+        severity: 'success',
+      });
+      
+      // Refresh the client list
+      fetchClients();
+      return results;
+    } catch (err) {
+      console.error('Error importing clients:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to import clients',
+        severity: 'error',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCloseForm = () => {
     setOpenForm(false);
     setEditingClient(null);
@@ -142,12 +188,36 @@ const ClientList: React.FC = () => {
     },
   ];
 
+  // Required fields for client import validation
+  const requiredFields = ['Name'];
+
+  // Custom validators for client fields
+  const validators = {
+    Industry: (value: string) => 
+      !value ? null : ['Technology', 'Finance', 'Healthcare', 'Retail', 'Manufacturing', 'Education', 'Media', 'Other'].includes(value) 
+        ? null 
+        : 'Invalid industry value',
+    Region: (value: string) =>
+      !value ? null : ['North America', 'South America', 'Europe', 'Asia', 'Africa', 'Australia', 'Global'].includes(value)
+        ? null
+        : 'Invalid region value',
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
           Clients
         </Typography>
+        <Stack direction="row" spacing={2}>
+          <ImportExportButtons
+            entityName="Clients"
+            data={clients}
+            onImport={handleImportClients}
+            requiredFields={requiredFields}
+            validators={validators}
+            disabled={loading}
+          />
         <Button
           variant="contained"
           color="primary"
@@ -159,6 +229,7 @@ const ClientList: React.FC = () => {
         >
           Add Client
         </Button>
+        </Stack>
       </Box>
 
       {error && (

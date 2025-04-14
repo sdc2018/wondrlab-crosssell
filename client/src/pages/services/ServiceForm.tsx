@@ -6,10 +6,11 @@ import {
   FormControl,
   InputLabel,
   Select,
-  FormControlLabel,
-  Switch,
+  FormHelperText,
   Box,
   CircularProgress,
+  Switch,
+  FormControlLabel,
   SelectChangeEvent,
 } from '@mui/material';
 import { Service } from '../../services/api/serviceService';
@@ -61,6 +62,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSubmit }) => {
     fetchBusinessUnits();
   }, []);
 
+  // Handle text field changes
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
@@ -77,6 +79,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSubmit }) => {
     }
   };
 
+  // Handle select field changes
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
     const { name, value } = e.target;
     setFormData({
@@ -93,6 +96,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSubmit }) => {
     }
   };
 
+  // Handle switch field changes
   const handleSwitchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setFormData({
@@ -175,9 +179,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSubmit }) => {
               </Select>
             )}
             {errors.AssociatedBU_ID && (
-              <Box sx={{ color: 'error.main', mt: 1, ml: 2, fontSize: '0.75rem' }}>
-                {errors.AssociatedBU_ID}
-              </Box>
+              <FormHelperText>{errors.AssociatedBU_ID}</FormHelperText>
             )}
           </FormControl>
         </Grid>

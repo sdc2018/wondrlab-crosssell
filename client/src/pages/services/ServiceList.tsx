@@ -7,22 +7,19 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  Stack,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DataTable from '../../components/common/DataTable';
 import FormDialog from '../../components/common/FormDialog';
+import ServiceForm from './ServiceForm';
+import ImportExportButtons from '../../components/common/ImportExportButtons';
 import serviceService, { Service } from '../../services/api/serviceService';
-import businessUnitService, { BusinessUnit } from '../../services/api/businessUnitService';
-
-// ServiceForm will be created next
-const ServiceForm = ({ service, onSubmit }: { service?: Service | null; onSubmit: (formData: any) => void }) => (
-  <div>Service Form Placeholder</div>
-);
+import businessUnitService from '../../services/api/businessUnitService';
 
 const ServiceList: React.FC = () => {
   const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
-  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openForm, setOpenForm] = useState(false);
@@ -48,18 +45,8 @@ const ServiceList: React.FC = () => {
     }
   };
 
-  const fetchBusinessUnits = async () => {
-    try {
-      const data = await businessUnitService.getAll();
-      setBusinessUnits(data);
-    } catch (err) {
-      console.error('Error fetching business units:', err);
-    }
-  };
-
   useEffect(() => {
     fetchServices();
-    fetchBusinessUnits();
   }, []);
 
   const handleView = (service: Service) => {
@@ -125,6 +112,52 @@ const ServiceList: React.FC = () => {
     }
   };
 
+  const handleImportServices = async (importedData: any[]) => {
+    setLoading(true);
+    try {
+      // Process each imported service
+      const results = await Promise.all(
+        importedData.map(async (service) => {
+          // Check if service with same name and BU already exists
+          const existingServices = await serviceService.getAll();
+          const existingService = existingServices.find(
+            (s) => 
+              s.Name.toLowerCase() === service.Name.toLowerCase() && 
+              s.AssociatedBU_ID === service.AssociatedBU_ID
+          );
+
+          if (existingService) {
+            // Update existing service
+            return await serviceService.update(existingService.ServiceID, service);
+          } else {
+            // Create new service
+            return await serviceService.create(service);
+          }
+        })
+      );
+
+      setSnackbar({
+        open: true,
+        message: `Successfully imported ${results.length} services`,
+        severity: 'success',
+      });
+      
+      // Refresh the service list
+      fetchServices();
+      return results;
+    } catch (err) {
+      console.error('Error importing services:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to import services',
+        severity: 'error',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCloseForm = () => {
     setOpenForm(false);
     setEditingService(null);
@@ -140,7 +173,7 @@ const ServiceList: React.FC = () => {
     {
       id: 'BusinessUnit',
       label: 'Business Unit',
-      minWidth: 170,
+      minWidth: 150,
       format: (value: any) => value?.Name || '—',
     },
     {
@@ -151,14 +184,16 @@ const ServiceList: React.FC = () => {
     },
   ];
 
-  // Map business unit data to services
-  const servicesWithBU = services.map(service => {
-    const businessUnit = businessUnits.find(bu => bu.BU_ID === service.AssociatedBU_ID);
-    return {
-      ...service,
-      BusinessUnit: businessUnit,
+  // Required fields for service import validation
+  const requiredFields = ['Name', 'AssociatedBU_ID'];
+
+  // Custom validators for service fields
+  const validators = {
+    IsActive: (value: any) => 
+      value === undefined ? null : 
+      typeof value === 'boolean' || value === 'true' || value === 'false' ? null : 
+      'IsActive must be a boolean value',
     };
-  });
 
   return (
     <Box>
@@ -166,6 +201,15 @@ const ServiceList: React.FC = () => {
         <Typography variant="h4" component="h1">
           Services
         </Typography>
+        <Stack direction="row" spacing={2}>
+          <ImportExportButtons
+            entityName="Services"
+            data={services}
+            onImport={handleImportServices}
+            requiredFields={requiredFields}
+            validators={validators}
+            disabled={loading}
+          />
         <Button
           variant="contained"
           color="primary"
@@ -177,6 +221,7 @@ const ServiceList: React.FC = () => {
         >
           Add Service
         </Button>
+        </Stack>
       </Box>
 
       {error && (
@@ -192,7 +237,7 @@ const ServiceList: React.FC = () => {
       ) : (
         <DataTable
           columns={columns}
-          data={servicesWithBU}
+          data={services}
           title="Service List"
           onView={handleView}
           onEdit={handleEdit}

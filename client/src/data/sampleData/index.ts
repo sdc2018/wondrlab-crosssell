@@ -1,16 +1,16 @@
 // Export all sample data and utility functions from a single location
 
 // Business Units
+export type { BusinessUnit } from './sampleBusinessUnits';
 export { 
-  BusinessUnit, 
   sampleBusinessUnits, 
   getBusinessUnitById, 
   getAllBusinessUnits 
 } from './sampleBusinessUnits';
 
 // Users
+export type { User } from './sampleUsers';
 export { 
-  User, 
   UserRole, 
   sampleUsers, 
   getUserById, 
@@ -20,8 +20,8 @@ export {
 } from './sampleUsers';
 
 // Services
+export type { Service } from './sampleServices';
 export { 
-  Service, 
   sampleServices, 
   getServiceById, 
   getAllServices, 
@@ -30,8 +30,8 @@ export {
 } from './sampleServices';
 
 // Clients
+export type { Client } from './sampleClients';
 export { 
-  Client, 
   sampleClients, 
   getClientById, 
   getAllClients, 
@@ -42,8 +42,8 @@ export {
 } from './sampleClients';
 
 // Opportunities
+export type { Opportunity } from './sampleOpportunities';
 export { 
-  Opportunity, 
   OpportunityStatus, 
   OpportunityPriority, 
   sampleOpportunities, 

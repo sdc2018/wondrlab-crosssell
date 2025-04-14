@@ -1,25 +1,14 @@
 import React from 'react';
-import {
-  Paper,
-  Typography,
-  Box,
-  Divider,
-  Chip,
-  Button,
-  Grid,
-  Skeleton,
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Box, Typography, Paper, Grid, Divider, CircularProgress } from '@mui/material';
 
-interface DetailField {
+export interface DetailField {
   label: string;
   value: React.ReactNode;
-  gridSize?: number;
+  gridSize?: number; // Optional grid size (1-12)
 }
 
-interface DetailSection {
-  title: string;
+export interface DetailSection {
+  title?: string;
   fields: DetailField[];
 }
 
@@ -32,72 +21,69 @@ interface DetailViewProps {
   actions?: React.ReactNode;
 }
 
-const DetailView: React.FC<DetailViewProps> = ({
-  title,
-  sections,
+/**
+ * A component for displaying detailed information in a structured format.
+ * It organizes data into sections with fields.
+ */
+const DetailView: React.FC<DetailViewProps> = ({ 
+  title, 
+  sections, 
   loading = false,
   onEdit,
   onBack,
-  actions,
+  actions
 }) => {
+  if (loading) {
+    return (
+      <Paper sx={{ p: 3, mb: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+        <CircularProgress />
+      </Paper>
+    );
+  }
+
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {onBack && (
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={onBack}
-              sx={{ mr: 2 }}
-              color="inherit"
-            >
-              Back
-            </Button>
-          )}
-          {loading ? (
-            <Skeleton width={200} height={40} />
-          ) : (
-            <Typography variant="h5" component="h1">
+        <Typography variant="h5" component="h2">
               {title}
             </Typography>
-          )}
-        </Box>
-        <Box>
-          {onEdit && (
-            <Button
-              startIcon={<EditIcon />}
-              variant="outlined"
-              onClick={onEdit}
-              sx={{ mr: 1 }}
-              disabled={loading}
-            >
-              Edit
-            </Button>
-          )}
-          {actions}
-        </Box>
+        {actions}
       </Box>
 
       {sections.map((section, sectionIndex) => (
-        <Box key={sectionIndex} sx={{ mb: 3 }}>
-          <Typography variant="h6" color="primary" gutterBottom>
+        <Box key={sectionIndex} sx={{ mt: sectionIndex > 0 ? 4 : 2 }}>
+          {section.title && (
+            <>
+              <Typography 
+                variant="h6" 
+                component="h3" 
+                sx={{ 
+                  mb: 2,
+                  color: 'primary.main',
+                  fontWeight: 500,
+                }}
+              >
             {section.title}
           </Typography>
           <Divider sx={{ mb: 2 }} />
+            </>
+          )}
+          
           <Grid container spacing={2}>
             {section.fields.map((field, fieldIndex) => (
-              <Grid item xs={12} sm={field.gridSize || 6} key={fieldIndex}>
+              <Grid 
+                key={fieldIndex} 
+                item 
+                xs={12} 
+                sm={field.gridSize || 6}
+              >
                 <Box>
                   <Typography variant="subtitle2" color="textSecondary">
                     {field.label}
                   </Typography>
-                  {loading ? (
-                    <Skeleton width="80%" height={24} />
-                  ) : (
                     <Typography variant="body1">
-                      {field.value || <Typography color="text.secondary">—</Typography>}
+                    {field.value || '-'}
                     </Typography>
-                  )}
                 </Box>
               </Grid>
             ))}

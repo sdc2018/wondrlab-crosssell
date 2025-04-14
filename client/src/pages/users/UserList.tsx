@@ -1,280 +1,341 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
-  IconButton,
-  TextField,
+  Typography,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Stack,
   Chip,
-  Toolbar,
-  Tooltip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon } from '@mui/icons-material';
-import { User, UserRole, sampleUsers } from '../../data/sampleData';
-import { useAuth } from '../../contexts/auth/AuthContext';
-import UserForm from './UserForm';
+import AddIcon from '@mui/icons-material/Add';
+import DataTable from '../../components/common/DataTable';
+import FormDialog from '../../components/common/FormDialog';
+import ImportExportButtons from '../../components/common/ImportExportButtons';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import userService, { User } from '../../services/api/userService';
+import { UserRole } from '../../data/sampleData';
 
 const UserList: React.FC = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  
-  const { currentUser } = useAuth();
-  
-  // Load users
+  const [submitting, setSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const data = await userService.getAll();
+      setUsers(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to load users. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // In a real app, this would be an API call
-    setUsers(sampleUsers);
-    setFilteredUsers(sampleUsers);
+    fetchUsers();
   }, []);
   
-  // Filter users based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredUsers(users);
-      return;
-    }
-    
-    const query = searchQuery.toLowerCase();
-    const filtered = users.filter(
-      user => 
-        user.Name.toLowerCase().includes(query) ||
-        user.Username.toLowerCase().includes(query) ||
-        user.Email.toLowerCase().includes(query) ||
-        user.Role.toLowerCase().includes(query)
-    );
-    
-    setFilteredUsers(filtered);
-  }, [searchQuery, users]);
-  
-  // Handle opening the form for creating a new user
-  const handleAddUser = () => {
-    setEditingUser(null);
-    setOpenForm(true);
+  const handleView = (user: User) => {
+    navigate(`/users/${user.UserID}`);
   };
   
-  // Handle opening the form for editing an existing user
-  const handleEditUser = (user: User) => {
+  const handleEdit = (user: User) => {
     setEditingUser(user);
     setOpenForm(true);
   };
   
-  // Handle opening the delete confirmation dialog
-  const handleDeleteClick = (user: User) => {
-    setUserToDelete(user);
-    setDeleteDialogOpen(true);
-  };
-  
-  // Handle confirming user deletion
-  const handleConfirmDelete = () => {
-    if (userToDelete) {
-      // In a real app, this would be an API call
-      const updatedUsers = users.filter(user => user.UserID !== userToDelete.UserID);
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
-      setDeleteDialogOpen(false);
-      setUserToDelete(null);
+  const handleDelete = async (user: User) => {
+    if (window.confirm(`Are you sure you want to delete ${user.Name}?`)) {
+      try {
+        await userService.delete(user.UserID);
+        setSnackbar({
+          open: true,
+          message: 'User deleted successfully',
+          severity: 'success',
+        });
+        fetchUsers();
+      } catch (err) {
+        console.error('Error deleting user:', err);
+        setSnackbar({
+          open: true,
+          message: 'Failed to delete user',
+          severity: 'error',
+        });
+      }
     }
   };
-  
-  // Handle canceling user deletion
-  const handleCancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setUserToDelete(null);
+
+  const handleFormSubmit = async (formData: any) => {
+    setSubmitting(true);
+    try {
+      if (editingUser) {
+        await userService.update(editingUser.UserID, formData);
+        setSnackbar({
+          open: true,
+          message: 'User updated successfully',
+          severity: 'success',
+        });
+      } else {
+        await userService.create(formData);
+        setSnackbar({
+          open: true,
+          message: 'User created successfully',
+          severity: 'success',
+        });
+      }
+      setOpenForm(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error saving user:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to save user',
+        severity: 'error',
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
-  
-  // Handle form submission (create/edit user)
-  const handleFormSubmit = (userData: User) => {
-    // In a real app, this would be an API call
-    if (editingUser) {
+
+  const handleImportUsers = async (importedData: any[]) => {
+    setLoading(true);
+    try {
+      // Process each imported user
+      const results = await Promise.all(
+        importedData.map(async (user) => {
+          // Check if user with same email already exists
+          const existingUsers = await userService.getAll();
+          const existingUser = existingUsers.find(
+            (u) => u.Email.toLowerCase() === user.Email.toLowerCase()
+          );
+
+          if (existingUser) {
       // Update existing user
-      const updatedUsers = users.map(user => 
-        user.UserID === userData.UserID ? userData : user
-      );
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
+            return await userService.update(existingUser.UserID, user);
     } else {
       // Create new user
-      const newUser = {
-        ...userData,
-        UserID: `U${(users.length + 1).toString().padStart(3, '0')}`,
-        CreatedAt: new Date(),
-        UpdatedAt: new Date(),
-      };
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
+            return await userService.create(user);
+          }
+        })
+      );
+
+      setSnackbar({
+        open: true,
+        message: `Successfully imported ${results.length} users`,
+        severity: 'success',
+      });
+      
+      // Refresh the user list
+      fetchUsers();
+      return results;
+    } catch (err) {
+      console.error('Error importing users:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to import users',
+        severity: 'error',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
     }
-    
-    setOpenForm(false);
-    setEditingUser(null);
   };
-  
-  // Handle closing the form
+
   const handleCloseForm = () => {
     setOpenForm(false);
     setEditingUser(null);
   };
   
-  // Get color for role chip
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case UserRole.SYSTEM_ADMIN:
-        return 'error';
-      case UserRole.BU_HEAD:
-        return 'primary';
-      case UserRole.SALES_EXECUTIVE:
-        return 'success';
-      case UserRole.SENIOR_MANAGEMENT:
-        return 'warning';
-      default:
-        return 'default';
-    }
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const columns = [
+    { id: 'Name', label: 'Name', minWidth: 170 },
+    { id: 'Email', label: 'Email', minWidth: 200 },
+    {
+      id: 'Role',
+      label: 'Role',
+      minWidth: 150,
+      format: (value: UserRole) => (
+        <Chip 
+          label={value} 
+          color={
+            value === UserRole.SYSTEM_ADMIN 
+              ? 'primary' 
+              : value === UserRole.BU_HEAD 
+                ? 'secondary' 
+                : value === UserRole.SENIOR_MANAGEMENT 
+                  ? 'info' 
+                  : 'default'
+          } 
+          size="small" 
+        />
+      ),
+    },
+    {
+      id: 'BusinessUnit',
+      label: 'Business Unit',
+      minWidth: 150,
+      format: (value: any) => value?.Name || '—',
+    },
+    {
+      id: 'IsActive',
+      label: 'Status',
+      minWidth: 100,
+      format: (value: boolean) => (value ? 'Active' : 'Inactive'),
+    },
+  ];
+
+  // Required fields for user import validation
+  const requiredFields = ['Name', 'Email', 'Role'];
+
+  // Custom validators for user fields
+  const validators = {
+    Email: (value: string) => 
+      !value ? 'Email is required' : 
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ? 'Invalid email address' : null,
+    Role: (value: string) => 
+      !value ? 'Role is required' : 
+      Object.values(UserRole).includes(value as UserRole) ? null : 'Invalid role',
+    IsActive: (value: any) => 
+      value === undefined ? null : 
+      typeof value === 'boolean' || value === 'true' || value === 'false' ? null : 
+      'IsActive must be a boolean value',
   };
   
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        User Management
+    <ProtectedRoute requiredRoles={[UserRole.SYSTEM_ADMIN]}>
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Users
       </Typography>
-      
-      <Paper sx={{ width: '100%', mb: 2 }}>
-        <Toolbar sx={{ pl: { sm: 2 }, pr: { xs: 1, sm: 1 } }}>
-          <Box sx={{ flex: '1 1 100%' }}>
-            <TextField
-              variant="outlined"
-              placeholder="Search users..."
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{ width: 300 }}
+          <Stack direction="row" spacing={2}>
+            <ImportExportButtons
+              entityName="Users"
+              data={users}
+              onImport={handleImportUsers}
+              requiredFields={requiredFields}
+              validators={validators}
+              disabled={loading}
             />
-          </Box>
-          
-          <Tooltip title="Add User">
             <Button
               variant="contained"
+              color="primary"
               startIcon={<AddIcon />}
-              onClick={handleAddUser}
-              sx={{ ml: 2 }}
+              onClick={() => {
+                setEditingUser(null);
+                setOpenForm(true);
+              }}
             >
               Add User
             </Button>
-          </Tooltip>
-        </Toolbar>
-        
-        <TableContainer>
-          <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size="medium">
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Username</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow hover key={user.UserID}>
-                  <TableCell>{user.Name}</TableCell>
-                  <TableCell>{user.Username}</TableCell>
-                  <TableCell>{user.Email}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={user.Role} 
-                      color={getRoleColor(user.Role) as any}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={user.IsActive ? 'Active' : 'Inactive'} 
-                      color={user.IsActive ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Edit">
-                      <IconButton onClick={() => handleEditUser(user)}>
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    
-                    <Tooltip title="Delete">
-                      <IconButton 
-                        onClick={() => handleDeleteClick(user)}
-                        disabled={user.UserID === currentUser?.UserID}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-              
-              {filteredUsers.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No users found
-                  </TableCell>
-                </TableRow>
+          </Stack>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={users}
+            title="User List"
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-      
-      {/* User Form Dialog */}
-      {openForm && (
-        <UserForm
+
+        <FormDialog
           open={openForm}
-          user={editingUser}
           onClose={handleCloseForm}
+          title={editingUser ? 'Edit User' : 'Add User'}
           onSubmit={handleFormSubmit}
-        />
-      )}
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCancelDelete}
+          isSubmitting={submitting}
+          submitLabel={editingUser ? 'Update' : 'Create'}
+        >
+          <UserForm user={editingUser} onSubmit={handleFormSubmit} />
+        </FormDialog>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete the user "{userToDelete?.Name}"? 
-            This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </ProtectedRoute>
+  );
+};
+
+// User Form component
+const UserForm: React.FC<{ user: User | null; onSubmit: (formData: any) => void }> = ({ user, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    Name: '',
+    Email: '',
+    Role: UserRole.SALES_EXECUTIVE,
+    AssociatedBU_ID: '',
+    IsActive: true,
+  });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        Name: user.Name || '',
+        Email: user.Email || '',
+        Role: user.Role || UserRole.SALES_EXECUTIVE,
+        AssociatedBU_ID: user.AssociatedBU_ID || '',
+        IsActive: user.IsActive !== undefined ? user.IsActive : true,
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  // Simplified form - in a real application, this would be more detailed
+  return (
+    <Box component="form" onSubmit={handleSubmit}>
+      <Typography>This is a simplified user form. In a real application, this would include fields for all user properties.</Typography>
     </Box>
   );
 };
