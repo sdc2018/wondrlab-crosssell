@@ -8,6 +8,20 @@ export class ServiceController {
   private static serviceService = new ServiceService();
 
   /**
+   * Helper method for authentication middleware to get a service
+   * This method is used by the auth middleware to check if a user has permission to update a service
+   * @param id Service ID
+   */
+  public static async getServiceForAuth(id: string): Promise<any> {
+    try {
+      return await ServiceController.serviceService.findById(id);
+    } catch (error) {
+      console.error(`Error in ServiceController.getServiceForAuth for ID ${id}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Get all services with optional filtering
    * @param req Express request object
    * @param res Express response object

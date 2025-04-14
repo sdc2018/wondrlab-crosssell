@@ -3,6 +3,7 @@ import clientRoutes from './clientRoutes';
 import opportunityRoutes from './opportunityRoutes';
 import businessUnitRoutes from './businessUnitRoutes';
 import serviceRoutes from './serviceRoutes';
+import userRoutes from './userRoutes';
 
 const router = Router();
 
@@ -30,8 +31,13 @@ router.use('/business-units', businessUnitRoutes);
  */
 router.use('/services', serviceRoutes);
 
+/**
+ * User routes
+ * Base path: /api/users
+ */
+router.use('/users', userRoutes);
+
 // Add more routes here as they are implemented
 // Example: router.use('/tasks', taskRoutes);
-// Example: router.use('/users', userRoutes);
 
 export default router;

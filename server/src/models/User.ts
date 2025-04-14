@@ -1,65 +1,138 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
 import { BusinessUnit } from './BusinessUnit';
-import { Client } from './Client';
-import { Opportunity } from './Opportunity';
-import { Note } from './Note';
-import { Task } from './Task';
+import * as bcrypt from 'bcrypt';
 
-// Enum for user roles
+/**
+ * User roles for role-based access control
+ */
 export enum UserRole {
-  ADMIN = 'Admin',
-  SALES_EXEC = 'SalesExec',
-  BU_MANAGER = 'BUManager',
-  EXECUTIVE = 'Executive'
+  ADMIN = 'admin',
+  SALES = 'sales',
+  BU_HEAD = 'bu_head',
+  MANAGEMENT = 'management'
 }
 
+/**
+ * User entity for authentication and authorization
+ */
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  UserID: string;
+  id: string;
 
-  @Column({ length: 100, nullable: false })
-  Name: string;
+  @Column({ length: 100, unique: true })
+  username: string;
 
-  @Column({ length: 100, nullable: false, unique: true })
-  Email: string;
+  @Column({ length: 255, unique: true })
+  email: string;
+
+  @Column({ length: 255 })
+  password: string;
+
+  @Column({ length: 100 })
+  firstName: string;
+
+  @Column({ length: 100 })
+  lastName: string;
 
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.SALES_EXEC
+    default: UserRole.SALES
   })
-  Role: UserRole;
-
-  @Column({ nullable: true })
-  AssociatedBU_ID: string;
-
-  @Column({ nullable: true })
-  PasswordHash: string;
+  role: UserRole;
 
   @Column({ default: true })
-  IsActive: boolean;
+  isActive: boolean;
 
-  // Relationships
-  @ManyToOne(() => BusinessUnit, businessUnit => businessUnit.Users, { nullable: true })
-  @JoinColumn({ name: 'AssociatedBU_ID' })
-  AssociatedBusinessUnit: BusinessUnit;
+  @Column({ nullable: true })
+  lastLogin: Date;
 
-  @OneToMany(() => BusinessUnit, businessUnit => businessUnit.LeadUser)
-  ManagedBusinessUnits: BusinessUnit[];
+  @CreateDateColumn()
+  createdAt: Date;
 
-  @OneToMany(() => Client, client => client.PrimaryAccountManager)
-  ManagedClients: Client[];
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-  @OneToMany(() => Opportunity, opportunity => opportunity.AssignedTo)
-  AssignedOpportunities: Opportunity[];
+  // Relationship with BusinessUnit - User belongs to a business unit
+  @ManyToOne(() => BusinessUnit, businessUnit => businessUnit.users)
+  businessUnit: BusinessUnit;
 
-  @OneToMany(() => Opportunity, opportunity => opportunity.CreatedBy)
-  CreatedOpportunities: Opportunity[];
+  @Column({ nullable: true })
+  businessUnitId: string;
 
-  @OneToMany(() => Note, note => note.Author)
-  AuthoredNotes: Note[];
+  // For BU_HEAD role - User can be head of multiple business units
+  @OneToMany(() => BusinessUnit, businessUnit => businessUnit.leadUser)
+  managedBusinessUnits: BusinessUnit[];
 
-  @OneToMany(() => Task, task => task.AssignedUser)
-  AssignedTasks: Task[];
+  /**
+   * Hash password before inserting or updating
+   */
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    // Only hash the password if it has been modified
+    if (this.password) {
+      try {
+        this.password = await bcrypt.hash(this.password, 10);
+      } catch (error) {
+        throw new Error('Error hashing password');
+      }
+    }
+  }
+
+  /**
+   * Check if provided password matches stored hash
+   * @param password Plain text password to check
+   * @returns Promise resolving to boolean indicating if password matches
+   */
+  async checkPassword(password: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, this.password);
+    } catch (error) {
+      throw new Error('Error comparing passwords');
+    }
+  }
+
+  /**
+   * Get full name of user
+   * @returns Full name (first name + last name)
+   */
+  getFullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
+
+  /**
+   * Check if user has a specific role
+   * @param role Role to check
+   * @returns Boolean indicating if user has the role
+   */
+  hasRole(role: UserRole): boolean {
+    return this.role === role;
+  }
+
+  /**
+   * Check if user is an administrator
+   * @returns Boolean indicating if user is an admin
+   */
+  isAdmin(): boolean {
+    return this.role === UserRole.ADMIN;
+  }
+
+  /**
+   * Check if user is a business unit head
+   * @returns Boolean indicating if user is a BU head
+   */
+  isBusinessUnitHead(): boolean {
+    return this.role === UserRole.BU_HEAD;
+  }
+
+  /**
+   * Convert user to JSON representation (excluding sensitive data)
+   * @returns User object without password
+   */
+  toJSON() {
+    const { password, ...userWithoutPassword } = this;
+    return userWithoutPassword;
+  }
 }
