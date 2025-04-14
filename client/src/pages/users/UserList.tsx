@@ -173,21 +173,8 @@ const UserList: React.FC = () => {
       id: 'Role',
       label: 'Role',
       minWidth: 150,
-      format: (value: UserRole) => (
-        <Chip 
-          label={value} 
-          color={
-            value === UserRole.SYSTEM_ADMIN 
-              ? 'primary' 
-              : value === UserRole.BU_HEAD 
-                ? 'secondary' 
-                : value === UserRole.SENIOR_MANAGEMENT 
-                  ? 'info' 
-                  : 'default'
-          } 
-          size="small" 
-        />
-      ),
+      // Return a string representation instead of a React Element
+      format: (value: UserRole) => value
     },
     {
       id: 'BusinessUnit',
@@ -219,6 +206,23 @@ const UserList: React.FC = () => {
       typeof value === 'boolean' || value === 'true' || value === 'false' ? null : 
       'IsActive must be a boolean value',
   };
+
+  // Render role with a Chip component in the table
+  const renderRoleWithChip = (role: UserRole) => (
+    <Chip 
+      label={role} 
+      color={
+        role === UserRole.SYSTEM_ADMIN 
+          ? 'primary' 
+          : role === UserRole.BU_HEAD 
+            ? 'secondary' 
+            : role === UserRole.SENIOR_MANAGEMENT 
+              ? 'info' 
+              : 'default'
+      } 
+      size="small" 
+    />
+  );
   
   return (
     <ProtectedRoute requiredRoles={[UserRole.SYSTEM_ADMIN]}>
@@ -302,6 +306,7 @@ const UserForm: React.FC<{ user: User | null; onSubmit: (formData: any) => void 
   const [formData, setFormData] = useState({
     Name: '',
     Email: '',
+    Username: '',
     Role: UserRole.SALES_EXECUTIVE,
     AssociatedBU_ID: '',
     IsActive: true,
@@ -312,6 +317,7 @@ const UserForm: React.FC<{ user: User | null; onSubmit: (formData: any) => void 
       setFormData({
         Name: user.Name || '',
         Email: user.Email || '',
+        Username: user.Username || '',
         Role: user.Role || UserRole.SALES_EXECUTIVE,
         AssociatedBU_ID: user.AssociatedBU_ID || '',
         IsActive: user.IsActive !== undefined ? user.IsActive : true,

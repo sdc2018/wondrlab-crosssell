@@ -1,17 +1,5 @@
 import { UserRole } from '../../data/sampleData';
-import { sampleUsers } from '../../data/sampleData/sampleUsers';
-
-// User interface
-export interface User {
-  UserID: string;
-  Name: string;
-  Email: string;
-  Role: UserRole;
-  AssociatedBU_ID?: string; // Reference to BusinessUnit
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  IsActive: boolean;
-}
+import { sampleUsers, User } from '../../data/sampleData/sampleUsers';
 
 // Mock API service for users
 const userService = {
@@ -45,6 +33,7 @@ const userService = {
     
     const newUser: User = {
       UserID: newId,
+      Username: userData.Username || userData.Email?.split('@')[0] || `user_${newId.toLowerCase()}`,
       Name: userData.Name || '',
       Email: userData.Email || '',
       Role: userData.Role || UserRole.SALES_EXECUTIVE,
@@ -115,3 +104,4 @@ const userService = {
 };
 
 export default userService;
+export type { User };
