@@ -4,6 +4,7 @@ import opportunityRoutes from './opportunityRoutes';
 import businessUnitRoutes from './businessUnitRoutes';
 import serviceRoutes from './serviceRoutes';
 import userRoutes from './userRoutes';
+import crossSellMatrixRoutes from './crossSellMatrixRoutes';
 
 const router = Router();
 
@@ -36,6 +37,12 @@ router.use('/services', serviceRoutes);
  * Base path: /api/users
  */
 router.use('/users', userRoutes);
+
+/**
+ * Cross-Sell Matrix routes
+ * Base path: /api/cross-sell-matrix
+ */
+router.use('/cross-sell-matrix', crossSellMatrixRoutes);
 
 // Add more routes here as they are implemented
 // Example: router.use('/tasks', taskRoutes);
