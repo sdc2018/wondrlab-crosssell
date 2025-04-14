@@ -1,34 +1,20 @@
 import React from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  IconButton, 
-  Avatar,
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
   Box,
-  Menu,
-  MenuItem,
-  Tooltip
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-interface HeaderProps {
+export interface HeaderProps {
   drawerWidth: number;
   onMenuClick: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ drawerWidth, onMenuClick }) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  
-  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleProfileMenuClose = () => {
-    setAnchorEl(null);
-  };
-
   return (
     <AppBar
       position="fixed"
@@ -48,30 +34,12 @@ const Header: React.FC<HeaderProps> = ({ drawerWidth, onMenuClick }) => {
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          Wondrlab Cross-Sell
+          Wondrlab Cross-Selling Management
         </Typography>
-        
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip title="Account settings">
-            <IconButton 
-              onClick={handleProfileMenuOpen}
-              size="large"
-              edge="end"
-              color="inherit"
-            >
-              <AccountCircleIcon />
-            </IconButton>
-          </Tooltip>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleProfileMenuClose}
-            onClick={handleProfileMenuClose}
-          >
-            <MenuItem>Profile</MenuItem>
-            <MenuItem>Settings</MenuItem>
-            <MenuItem>Logout</MenuItem>
-          </Menu>
+          <IconButton color="inherit">
+            <AccountCircleIcon />
+          </IconButton>
         </Box>
       </Toolbar>
     </AppBar>

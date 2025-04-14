@@ -5,11 +5,11 @@ import Sidebar from './Sidebar';
 
 const drawerWidth = 240;
 
-interface AppLayoutProps {
+interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => {
@@ -19,7 +19,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <Header drawerWidth={drawerWidth} onMenuClick={handleDrawerToggle} />
+      <Header 
+        drawerWidth={drawerWidth} 
+        onMenuClick={handleDrawerToggle} 
+      />
       <Sidebar 
         drawerWidth={drawerWidth} 
         mobileOpen={mobileOpen} 
@@ -41,4 +44,4 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 };
 
-export default AppLayout;
+export default MainLayout;

@@ -1,39 +1,24 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { CssBaseline, ThemeProvider, createTheme, AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem, IconButton, Paper } from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import MainLayout from './components/layout/MainLayout';
+import ClientList from './pages/clients/ClientList';
+import ClientDetail from './pages/clients/ClientDetail';
+import ServiceList from './pages/services/ServiceList';
+import ServiceDetail from './pages/services/ServiceDetail';
 
-// Import pages
-import DashboardPage from './pages/dashboard/DashboardPage';
-import ClientListPage from './pages/clients/ClientListPage';
-import AddClientPage from './pages/clients/AddClientPage';
+// Placeholder components - these will be replaced with actual components later
+const Dashboard = () => <div>Dashboard</div>;
+const MatrixView = () => <div>Cross-Sell Matrix</div>;
+const OpportunityList = () => <div>Opportunity List</div>;
+const OpportunityDetail = () => <div>Opportunity Detail</div>;
+const TaskList = () => <div>Task List</div>;
+const MyTasks = () => <div>My Tasks</div>;
+const Reports = () => <div>Reports</div>;
+const Login = () => <div>Login</div>;
 
-// Import service pages
-import ServiceListPage from './pages/services/ServiceListPage';
-import AddServicePage from './pages/services/AddServicePage';
-import EditServicePage from './pages/services/EditServicePage';
-import ServiceDetailPage from './pages/services/ServiceDetailPage';
-
-// Import business unit pages
-import BusinessUnitListPage from './pages/business-units/BusinessUnitListPage';
-import AddBusinessUnitPage from './pages/business-units/AddBusinessUnitPage';
-
-// Import opportunity pages
-import OpportunityListPage from './pages/opportunities/OpportunityListPage';
-import AddOpportunityPage from './pages/opportunities/AddOpportunityPage';
-
-// Import user management pages
-import UserManagementPage from './pages/admin/UserManagementPage';
-import AddUserPage from './pages/admin/AddUserPage';
-
-// Import context providers
-import { ServicesProvider } from './contexts/ServicesContext';
-import { BusinessUnitsProvider } from './contexts/BusinessUnitsContext';
-import { UsersProvider } from './contexts/UsersContext';
-
-// Create theme
+// Create a theme
 const theme = createTheme({
   palette: {
     primary: {
@@ -42,73 +27,124 @@ const theme = createTheme({
     secondary: {
       main: '#dc004e',
     },
+    background: {
+      default: '#f5f5f5',
+    },
   },
 });
 
-// Placeholder component for pages under construction
-const UnderConstructionPage = ({ pageName }: { pageName: string }) => (
-  <Box sx={{ padding: '20px', textAlign: 'center' }}>
-    <Typography variant="h4" gutterBottom>
-      {pageName} Page
-    </Typography>
-    <Typography variant="body1">
-      This page is currently under construction. Please check back later.
-    </Typography>
-  </Box>
-);
+function App() {
+  // Placeholder for authentication state
+  const isAuthenticated = true; // This will be replaced with actual auth logic
 
-// Placeholder for Client Detail Page
-const ClientDetailPage = () => {
   return (
-    <Box sx={{ padding: '20px' }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton 
-            component={Link} 
-            to="/clients"
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4">
-            Client Details
-          </Typography>
-        </Box>
-        <Typography variant="body1">
-          This page displays detailed information about a client, including contacts, engagements, and opportunities.
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          The Client Details page is currently under development. Check back soon for complete client information.
-        </Typography>
-      </Paper>
-    </Box>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          
+          {/* Protected routes */}
+          {isAuthenticated ? (
+            <>
+              <Route 
+                path="/dashboard" 
+                element={
+                  <MainLayout>
+                    <Dashboard />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/clients" 
+                element={
+                  <MainLayout>
+                    <ClientList />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/clients/:id" 
+                element={
+                  <MainLayout>
+                    <ClientDetail />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/services" 
+                element={
+                  <MainLayout>
+                    <ServiceList />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/services/:id" 
+                element={
+                  <MainLayout>
+                    <ServiceDetail />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/matrix" 
+                element={
+                  <MainLayout>
+                    <MatrixView />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/opportunities" 
+                element={
+                  <MainLayout>
+                    <OpportunityList />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/opportunities/:id" 
+                element={
+                  <MainLayout>
+                    <OpportunityDetail />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/tasks" 
+                element={
+                  <MainLayout>
+                    <TaskList />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/my-tasks" 
+                element={
+                  <MainLayout>
+                    <MyTasks />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/reports" 
+                element={
+                  <MainLayout>
+                    <Reports />
+                  </MainLayout>
+                } 
+              />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            </>
+          ) : (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          )}
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
-};
+}
 
-// Placeholder for Edit Client Page
-const EditClientPage = () => {
-  return (
-    <Box sx={{ padding: '20px' }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton 
-            component={Link} 
-            to="/clients"
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4">
-            Edit Client
-          </Typography>
-        </Box>
-        <Typography variant="body1">
-          This page allows you to edit client information.
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          The Edit Client page is currently under development. Check back soon for the ability to edit client information.
-        </Typography>
-      </Paper>
-    </Box>
-  );
-};
+export default App;

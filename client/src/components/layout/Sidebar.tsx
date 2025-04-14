@@ -1,57 +1,68 @@
 import React from 'react';
-import { 
-  Drawer, 
-  Toolbar, 
-  List, 
-  Divider, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
-  Box
+  Divider,
+  Box,
+  Toolbar,
+  IconButton,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
-import CategoryIcon from '@mui/icons-material/Category';
+import BusinessIcon from '@mui/icons-material/Business';
 import GridViewIcon from '@mui/icons-material/GridView';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import TaskIcon from '@mui/icons-material/Task';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-interface SidebarProps {
+export interface SidebarProps {
   drawerWidth: number;
   mobileOpen: boolean;
   onClose: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ drawerWidth, mobileOpen, onClose }) => {
-  const navItems = [
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [open, setOpen] = React.useState(true);
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+    onClose();
+  };
+
+  const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Client Management', icon: <PeopleIcon />, path: '/clients' },
-    { text: 'Service Catalog', icon: <CategoryIcon />, path: '/services' },
+    { text: 'Clients', icon: <PeopleIcon />, path: '/clients' },
+    { text: 'Services', icon: <BusinessIcon />, path: '/services' },
     { text: 'Cross-Sell Matrix', icon: <GridViewIcon />, path: '/matrix' },
     { text: 'Opportunities', icon: <AssignmentIcon />, path: '/opportunities' },
-    { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
+    { text: 'My Tasks', icon: <TaskIcon />, path: '/my-tasks' },
+    { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
   ];
 
   const drawer = (
     <div>
-      <Toolbar>
-        <Box
-          component="img"
-          sx={{ height: 40, display: 'block', margin: '0 auto' }}
-          alt="Wondrlab Logo"
-          src="/logo.png"
-        />
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', px: [1] }}>
+        <IconButton onClick={handleDrawerClose}>
+          <ChevronLeftIcon />
+        </IconButton>
       </Toolbar>
       <Divider />
       <List>
-        {navItems.map((item) => (
+        {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton component={RouterLink} to={item.path}>
-              <ListItemIcon>
-                {item.icon}
-              </ListItemIcon>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => navigate(item.path)}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
@@ -63,8 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({ drawerWidth, mobileOpen, onClose }) =
   return (
     <Box
       component="nav"
-      sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      aria-label="navigation menu"
+      sx={{
+        width: { sm: drawerWidth },
+        flexShrink: 0,
+      }}
     >
       {/* Mobile drawer */}
       <Drawer
@@ -76,18 +89,23 @@ const Sidebar: React.FC<SidebarProps> = ({ drawerWidth, mobileOpen, onClose }) =
         }}
         sx={{
           display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+          },
         }}
       >
         {drawer}
       </Drawer>
-      
       {/* Desktop drawer */}
       <Drawer
         variant="permanent"
         sx={{
           display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+          },
         }}
         open
       >
