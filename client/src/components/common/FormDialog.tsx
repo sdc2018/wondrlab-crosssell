@@ -12,7 +12,7 @@ interface FormDialogProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  onSubmit: (() => void) | ((formData: any) => Promise<void>);
+  onSubmit: (formData?: any) => void;  // Updated to accept an optional argument
   isSubmitting?: boolean;
   submitLabel?: string;
   children: React.ReactNode;
@@ -29,12 +29,7 @@ const FormDialog: React.FC<FormDialogProps> = ({
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Pass an empty object if onSubmit expects an argument
-    if (onSubmit.length > 0) {
-      (onSubmit as (formData: any) => Promise<void>)({});
-    } else {
-      (onSubmit as () => void)();
-    }
+    onSubmit(e);  // Pass the form event to onSubmit
   };
 
   return (
@@ -53,7 +48,7 @@ const FormDialog: React.FC<FormDialogProps> = ({
             disabled={isSubmitting}
             startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
           >
-            {submitLabel}
+            {isSubmitting ? 'Submitting...' : submitLabel}
           </Button>
         </DialogActions>
       </form>

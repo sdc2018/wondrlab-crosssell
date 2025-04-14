@@ -7,6 +7,11 @@ import ClientList from './pages/clients/ClientList';
 import ClientDetail from './pages/clients/ClientDetail';
 import ServiceList from './pages/services/ServiceList';
 import ServiceDetail from './pages/services/ServiceDetail';
+import { AuthProvider, useAuth } from './contexts/auth/AuthContext';
+import Login from './pages/auth/Login';
+import { UserManagement } from './pages/users';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { UserRole } from './data/sampleData';
 
 // Placeholder components - these will be replaced with actual components later
 const Dashboard = () => <div>Dashboard</div>;
@@ -16,7 +21,6 @@ const OpportunityDetail = () => <div>Opportunity Detail</div>;
 const TaskList = () => <div>Task List</div>;
 const MyTasks = () => <div>My Tasks</div>;
 const Reports = () => <div>Reports</div>;
-const Login = () => <div>Login</div>;
 
 // Create a theme
 const theme = createTheme({
@@ -33,14 +37,11 @@ const theme = createTheme({
   },
 });
 
-function App() {
-  // Placeholder for authentication state
-  const isAuthenticated = true; // This will be replaced with actual auth logic
+// AppRoutes component to use auth context
+const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -136,13 +137,32 @@ function App() {
                   </MainLayout>
                 } 
               />
+          <Route 
+            path="/users" 
+            element={
+              <MainLayout>
+                <UserManagement />
+              </MainLayout>
+            } 
+          />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </>
           ) : (
             <Route path="*" element={<Navigate to="/login" replace />} />
           )}
         </Routes>
+  );
+};
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
       </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

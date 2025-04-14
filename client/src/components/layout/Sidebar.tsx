@@ -105,6 +105,12 @@ const Sidebar: React.FC<SidebarProps> = ({ drawerWidth, mobileOpen, onClose }) =
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: drawerWidth,
+            ...(open ? {
+              overflowX: 'hidden',
+            } : {
+              overflowX: 'hidden',
+              width: '0px',
+            }),
           },
         }}
         open
