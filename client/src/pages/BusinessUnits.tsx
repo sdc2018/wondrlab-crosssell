@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/auth/AuthContext';
+import { useAuth, UserRole } from '../contexts/auth/AuthContext';
 import businessUnitService from '../services/api/businessUnitService';
-import { UserRole } from '../services/api/userService';
 
 interface BusinessUnit {
   id: string;
@@ -27,7 +26,7 @@ const BusinessUnits: React.FC = () => {
   });
   const [availableHeads, setAvailableHeads] = useState<any[]>([]);
 
-  const canEdit = hasRole([UserRole.ADMIN, UserRole.MANAGEMENT]);
+  const canEdit = hasRole(['Admin', 'Executive']);
 
   useEffect(() => {
     // Fetch business units

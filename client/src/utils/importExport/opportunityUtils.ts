@@ -14,12 +14,12 @@ import {
 
 // Opportunity CSV headers
 const OPPORTUNITY_HEADERS = [
-  'OpportunityID',
-  'ClientID',
-  'ServiceID',
-  'Status',
-  'Priority',
-  'AssignedUserID',
+  'opportunityId',
+  'clientId',
+  'serviceId',
+  'status',
+  'priority',
+  'assignedTo',
   'EstimatedValue',
   'Notes',
   'CreatedAt',
@@ -29,16 +29,16 @@ const OPPORTUNITY_HEADERS = [
 // Function to convert an Opportunity to CSV row data
 const getOpportunityRowData = (opportunity: Opportunity): string[] => {
   return [
-    opportunity.OpportunityID,
-    opportunity.ClientID,
-    opportunity.ServiceID,
-    opportunity.Status,
-    opportunity.Priority,
-    opportunity.AssignedUserID,
-    opportunity.EstimatedValue?.toString() || '',
-    opportunity.Notes || '',
-    opportunity.CreatedAt.toISOString(),
-    opportunity.UpdatedAt.toISOString()
+    opportunity.opportunityId,
+    opportunity.clientId,
+    opportunity.serviceId,
+    opportunity.status,
+    opportunity.priority,
+    opportunity.assignedTo,
+    opportunity.value?.toString() || '',
+    opportunity.description || '',
+    opportunity.createdAt.toISOString(),
+    opportunity.updatedAt.toISOString()
   ];
 };
 

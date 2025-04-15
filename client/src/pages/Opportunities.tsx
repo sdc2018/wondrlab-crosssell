@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/auth/AuthContext';
-import { UserRole } from '../services/api/userService';
+import { useAuth, UserRole } from '../contexts/auth/AuthContext';
 
 interface Opportunity {
   id: string;
@@ -31,7 +30,7 @@ const Opportunities: React.FC = () => {
     assignedToId: ''
   });
   
-  const canEdit = hasRole([UserRole.ADMIN, UserRole.MANAGEMENT, UserRole.BU_HEAD, UserRole.SALES_REP]);
+  const canEdit = hasRole(['Admin', 'Executive', 'BUManager', 'SalesExec']);
 
   // Load mock data
   useEffect(() => {

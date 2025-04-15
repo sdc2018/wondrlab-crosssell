@@ -1,82 +1,157 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, sampleUsers } from '../../data/sampleData';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-// Define the shape of our authentication context
+// Define user roles
+export type UserRole = 'Admin' | 'SalesExec' | 'BUManager' | 'Executive';
+
+// Define the User interface
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  associatedBU: string | null;
+  isActive: boolean;
+}
+
+// Sample users for testing
+const sampleUsers: User[] = [
+  {
+    id: 1,
+    name: 'Alice Thompson',
+    email: 'alice.thompson@wondrlab.com',
+    role: 'Admin',
+    associatedBU: null,
+    isActive: true
+  },
+  {
+    id: 2,
+    name: 'Bob Richards',
+    email: 'bob.richards@wondrlab.com',
+    role: 'SalesExec',
+    associatedBU: null,
+    isActive: true
+  },
+  {
+    id: 3,
+    name: 'Carol White',
+    email: 'carol.white@wondrlab.com',
+    role: 'BUManager',
+    associatedBU: 'Content',
+    isActive: true
+  },
+  {
+    id: 4,
+    name: 'David Miller',
+    email: 'david.miller@wondrlab.com',
+    role: 'BUManager',
+    associatedBU: 'Digital Media',
+    isActive: true
+  },
+  {
+    id: 5,
+    name: 'Eva Garcia',
+    email: 'eva.garcia@wondrlab.com',
+    role: 'Executive',
+    associatedBU: null,
+    isActive: true
+  }
+];
+
+// Define the context interface
 interface AuthContextType {
-  currentUser: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  user: User | null;
+  login: {
+    (usernameOrCredentials: string, password: string): Promise<boolean>;
+    (credentials: { email: string; password: string }): Promise<boolean>;
+  };
   logout: () => void;
-  hasPermission: (requiredRoles: UserRole[]) => boolean;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
 }
 
 // Create the context with a default value
-const AuthContext = createContext<AuthContextType>({
-  currentUser: null,
-  isAuthenticated: false,
-  login: async () => false,
-  logout: () => {},
-  hasPermission: () => false,
-});
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Custom hook to use the auth context
-export const useAuth = () => useContext(AuthContext);
-
-// Provider component that wraps the app and makes auth available to any child component
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+// Create a provider component
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Check for existing auth on component mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser) as User;
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('currentUser');
-      }
-    }
-  }, []);
-
-  // In a real app, this would make an API call to verify credentials
-  // For this demo, we're just checking against our sample data
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // Simple "authentication" against sample data
-    // In a real app, this would be a proper API call with password hashing
-    const user = sampleUsers.find(u => u.Username === username);
+  // Login function - handles both object and separate parameters
+  const login = async (
+    usernameOrCredentials: string | { email: string; password: string }, 
+    passwordParam?: string
+  ): Promise<boolean> => {
+    // Determine if we're using object or separate parameters
+    let email: string;
+    let password: string;
     
-    if (user) {
-      // In a real app, we'd verify the password here
-      // For demo purposes, we'll just accept any password
-      setCurrentUser(user);
+    if (typeof usernameOrCredentials === 'string') {
+      // Using separate parameters (username, password)
+      email = usernameOrCredentials;
+      password = passwordParam || '';
+    } else {
+      // Using object parameter ({ email, password })
+      email = usernameOrCredentials.email;
+      password = usernameOrCredentials.password;
+    }
+    
+    console.log('Login attempt:', { email, password });
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Find user by email (in a real app, this would be handled by the backend)
+    const foundUser = sampleUsers.find(u => 
+      u.email === email || 
+      u.email.split('@')[0] === email || // Allow login with just the username part
+      u.name.toLowerCase().replace(' ', '.') === email.toLowerCase() // Allow login with name.surname format
+    );
+    
+    console.log('Found user:', foundUser);
+    
+    // Check if user exists and password is correct (simplified for demo)
+    if (foundUser && password === 'password') {
+      setUser(foundUser);
       setIsAuthenticated(true);
-      localStorage.setItem('currentUser', JSON.stringify(user));
       return true;
     }
     
     return false;
   };
 
+  // Logout function
   const logout = () => {
-    setCurrentUser(null);
+    setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('currentUser');
   };
 
-  // Check if user has permission based on their role
-  const hasPermission = (requiredRoles: UserRole[]): boolean => {
-    if (!currentUser) return false;
-    return requiredRoles.includes(currentUser.Role);
+  // Check if user has a specific role or any of the roles in an array
+  const hasRole = (roles: UserRole | UserRole[]): boolean => {
+    if (!user) return false;
+    
+    if (Array.isArray(roles)) {
+      return roles.includes(user.role);
+    }
+    
+    return user.role === roles;
   };
 
-  // Provide the auth context value to children components
+  // Provide the auth context to children components
   return (
-    <AuthContext.Provider value={{ currentUser, isAuthenticated, login, logout, hasPermission }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+// Create a hook for using the auth context
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export default AuthContext;

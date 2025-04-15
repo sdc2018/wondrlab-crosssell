@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/auth/AuthContext';
-import { UserRole } from '../services/api/userService';
+import { useAuth, UserRole } from '../contexts/auth/AuthContext';
 
 const Dashboard: React.FC = () => {
   const { user, hasRole } = useAuth();
@@ -176,7 +175,7 @@ const Dashboard: React.FC = () => {
             </div>
           </a>
           
-          {hasRole([UserRole.ADMIN, UserRole.MANAGEMENT, UserRole.BU_HEAD, UserRole.SALES_REP]) && (
+          {hasRole(['Admin', 'Executive', 'BUManager', 'SalesExec']) && (
             <a href="/opportunities/new" className="block rounded-lg bg-white p-6 shadow hover:bg-gray-50">
               <div className="flex items-center">
                 <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -187,7 +186,7 @@ const Dashboard: React.FC = () => {
             </a>
           )}
           
-          {hasRole([UserRole.ADMIN, UserRole.MANAGEMENT]) && (
+          {hasRole(['Admin', 'Executive']) && (
             <a href="/clients/new" className="block rounded-lg bg-white p-6 shadow hover:bg-gray-50">
               <div className="flex items-center">
                 <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -198,7 +197,7 @@ const Dashboard: React.FC = () => {
             </a>
           )}
           
-          {hasRole([UserRole.ADMIN, UserRole.MANAGEMENT, UserRole.BU_HEAD]) && (
+          {hasRole(['Admin', 'Executive', 'BUManager']) && (
             <a href="/cross-sell-matrix" className="block rounded-lg bg-white p-6 shadow hover:bg-gray-50">
               <div className="flex items-center">
                 <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

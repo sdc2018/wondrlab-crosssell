@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/auth/AuthContext';
-import { UserRole } from '../services/api/userService';
+import { useAuth, UserRole } from '../contexts/auth/AuthContext';
 
 interface Client {
   id: string;
@@ -26,7 +25,7 @@ const Clients: React.FC = () => {
     businessUnitId: ''
   });
   
-  const canEdit = hasRole([UserRole.ADMIN, UserRole.MANAGEMENT]);
+  const canEdit = hasRole(['Admin', 'Executive']);
 
   // Load mock data
   useEffect(() => {

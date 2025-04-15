@@ -1,70 +1,135 @@
 import { sampleClients } from './sampleClients';
 import { sampleServices } from './sampleServices';
 import { sampleUsers } from './sampleUsers';
-import { opportunitiesData } from './sampleOpportunitiesData';
-import { opportunitiesData2 } from './sampleOpportunitiesData2';
 
+// Enums
 export enum OpportunityStatus {
-  IDENTIFIED = "Identified",
-  IN_DISCUSSION = "In Discussion",
-  PROPOSAL_SENT = "Proposal Sent",
-  ON_HOLD = "On Hold",
-  WON = "Won",
-  LOST = "Lost"
+  NEW = 'New',
+  IN_PROGRESS = 'In Progress',
+  QUALIFIED = 'Qualified',
+  PROPOSAL = 'Proposal',
+  NEGOTIATION = 'Negotiation',
+  CLOSED_WON = 'Closed Won',
+  CLOSED_LOST = 'Closed Lost'
 }
 
 export enum OpportunityPriority {
-  HIGH = "High",
-  MEDIUM = "Medium",
-  LOW = "Low"
+  LOW = 'Low',
+  MEDIUM = 'Medium',
+  HIGH = 'High'
 }
 
+// Types
 export interface Opportunity {
-  OpportunityID: string;
-  ClientID: string; // Reference to Client
-  ServiceID: string; // Reference to Service
-  Status: OpportunityStatus;
-  Priority: OpportunityPriority;
-  AssignedUserID: string; // Reference to User
-  EstimatedValue?: number;
-  Notes?: string;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  id: string;
+  title: string;
+  description: string;
+  clientId: string;
+  serviceId: string;
+  status: OpportunityStatus;
+  priority: OpportunityPriority;
+  value: number;
+  assignedTo: string;
+  createdAt: string;
+  updatedAt: string;
+  closedAt?: string;
 }
 
-export const sampleOpportunities: Opportunity[] = [...opportunitiesData, ...opportunitiesData2];
+// Sample data
+export const sampleOpportunities: Opportunity[] = [
+  {
+    id: 'opp-001',
+    title: 'Website Redesign for Client A',
+    description: 'Complete website redesign with new branding elements',
+    clientId: sampleClients[0].id,
+    serviceId: sampleServices[0].id,
+    status: OpportunityStatus.IN_PROGRESS,
+    priority: OpportunityPriority.HIGH,
+    value: 75000,
+    assignedTo: sampleUsers[0].id,
+    createdAt: '2023-01-15T10:30:00Z',
+    updatedAt: '2023-01-20T14:45:00Z'
+  },
+  {
+    id: 'opp-002',
+    title: 'Social Media Campaign for Client B',
+    description: 'Three-month social media campaign across multiple platforms',
+    clientId: sampleClients[1].id,
+    serviceId: sampleServices[1].id,
+    status: OpportunityStatus.PROPOSAL,
+    priority: OpportunityPriority.MEDIUM,
+    value: 45000,
+    assignedTo: sampleUsers[1].id,
+    createdAt: '2023-02-05T09:15:00Z',
+    updatedAt: '2023-02-10T11:30:00Z'
+  },
+  {
+    id: 'opp-003',
+    title: 'SEO Optimization for Client C',
+    description: 'Comprehensive SEO audit and optimization',
+    clientId: sampleClients[2].id,
+    serviceId: sampleServices[2].id,
+    status: OpportunityStatus.CLOSED_WON,
+    priority: OpportunityPriority.MEDIUM,
+    value: 30000,
+    assignedTo: sampleUsers[2].id,
+    createdAt: '2023-01-25T13:45:00Z',
+    updatedAt: '2023-02-15T16:20:00Z',
+    closedAt: '2023-02-15T16:20:00Z'
+  },
+  {
+    id: 'opp-004',
+    title: 'Brand Strategy for Client D',
+    description: 'Develop comprehensive brand strategy and guidelines',
+    clientId: sampleClients[3].id,
+    serviceId: sampleServices[3].id,
+    status: OpportunityStatus.NEW,
+    priority: OpportunityPriority.HIGH,
+    value: 90000,
+    assignedTo: sampleUsers[0].id,
+    createdAt: '2023-03-01T10:00:00Z',
+    updatedAt: '2023-03-01T10:00:00Z'
+  },
+  {
+    id: 'opp-005',
+    title: 'Content Marketing for Client E',
+    description: 'Six-month content marketing campaign',
+    clientId: sampleClients[4].id,
+    serviceId: sampleServices[4].id,
+    status: OpportunityStatus.QUALIFIED,
+    priority: OpportunityPriority.LOW,
+    value: 25000,
+    assignedTo: sampleUsers[1].id,
+    createdAt: '2023-02-20T14:30:00Z',
+    updatedAt: '2023-02-25T09:45:00Z'
+  }
+];
 
-// Export function to get an opportunity by ID
+// Utility functions
 export const getOpportunityById = (id: string): Opportunity | undefined => {
-  return sampleOpportunities.find(opp => opp.OpportunityID === id);
+  return sampleOpportunities.find(opportunity => opportunity.id === id);
 };
 
-// Export function to get all opportunities
 export const getAllOpportunities = (): Opportunity[] => {
-  return [...sampleOpportunities];
+  return sampleOpportunities;
 };
 
-// Export function to get opportunities by status
 export const getOpportunitiesByStatus = (status: OpportunityStatus): Opportunity[] => {
-  return sampleOpportunities.filter(opp => opp.Status === status);
+  return sampleOpportunities.filter(opportunity => opportunity.status === status);
 };
 
-// Export function to get opportunities by client
 export const getOpportunitiesByClient = (clientId: string): Opportunity[] => {
-  return sampleOpportunities.filter(opp => opp.ClientID === clientId);
+  return sampleOpportunities.filter(opportunity => opportunity.clientId === clientId);
 };
 
-// Export function to get opportunities by service
 export const getOpportunitiesByService = (serviceId: string): Opportunity[] => {
-  return sampleOpportunities.filter(opp => opp.ServiceID === serviceId);
+  return sampleOpportunities.filter(opportunity => opportunity.serviceId === serviceId);
 };
 
-// Export function to get opportunities by assigned user
 export const getOpportunitiesByUser = (userId: string): Opportunity[] => {
-  return sampleOpportunities.filter(opp => opp.AssignedUserID === userId);
+  return sampleOpportunities.filter(opportunity => opportunity.assignedTo === userId);
 };
 
-// Export function to get opportunities by priority
 export const getOpportunitiesByPriority = (priority: OpportunityPriority): Opportunity[] => {
-  return sampleOpportunities.filter(opp => opp.Priority === priority);
+  return sampleOpportunities.filter(opportunity => opportunity.priority === priority);
 };

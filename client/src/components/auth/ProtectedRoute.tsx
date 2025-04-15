@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiredRoles = [] 
 }) => {
-  const { isAuthenticated, currentUser } = useAuth();
+  const { isAuthenticated, user, hasRole } = useAuth();
 
   // If user is not authenticated, redirect to login
   if (!isAuthenticated) {
@@ -24,14 +24,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If there are required roles and the user doesn't have any of them, redirect to dashboard
-  if (requiredRoles.length > 0 && currentUser) {
-    const hasRequiredRole = requiredRoles.includes(currentUser.Role);
+  if (requiredRoles.length > 0 && user) {
+    const hasRequiredRole = requiredRoles.some(role => hasRole(role));
     if (!hasRequiredRole) {
       return <Navigate to="/dashboard" replace />;
     }
   }
 
-  // User is authenticated and has the required role (or no role is required)
+  // User is authenticated and has the required role, render the children
   return <>{children}</>;
 };
 

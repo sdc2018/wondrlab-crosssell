@@ -1,0 +1,158 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+      
+      - name: Install dependencies (root)
+        run: npm ci
+      
+      - name: Install dependencies (client)
+        run: cd client && npm ci
+      
+      - name: Install dependencies (server)
+        run: cd server && npm ci
+      
+      - name: Lint client
+        run: cd client && npm run lint
+      
+      - name: Lint server
+        run: cd server && npm run lint
+      
+      - name: Test client
+        run: cd client && npm test -- --coverage
+      
+      - name: Test server
+        run: cd server && npm test -- --coverage
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+  
+  build:
+    name: Build
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+      
+      - name: Install dependencies (client)
+        run: cd client && npm ci
+      
+      - name: Install dependencies (server)
+        run: cd server && npm ci
+      
+      - name: Build client
+        run: cd client && npm run build
+      
+      - name: Build server
+        run: cd server && npm run build
+      
+      - name: Upload client build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-build
+          path: client/build
+      
+      - name: Upload server build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-build
+          path: server/dist
+  
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download client build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: client-build
+          path: client/build
+      
+      - name: Download server build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: server-build
+          path: server/dist
+      
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      
+      - name: Deploy to staging server
+        run: |
+          rsync -avz --delete client/build/ ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/var/www/html/wondrlab-crosssell/client/
+          rsync -avz --delete server/dist/ ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/var/www/html/wondrlab-crosssell/server/
+          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} 'cd /var/www/html/wondrlab-crosssell/server && npm ci --production && pm2 restart wondrlab-crosssell-staging'
+  
+  deploy-production:
+    name: Deploy to Production
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download client build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: client-build
+          path: client/build
+      
+      - name: Download server build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: server-build
+          path: server/dist
+      
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      
+      - name: Deploy to production server
+        run: |
+          rsync -avz --delete client/build/ ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }}:/var/www/html/wondrlab-crosssell/client/
+          rsync -avz --delete server/dist/ ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }}:/var/www/html/wondrlab-crosssell/server/
+          ssh ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} 'cd /var/www/html/wondrlab-crosssell/server && npm ci --production && pm2 restart wondrlab-crosssell-production'
